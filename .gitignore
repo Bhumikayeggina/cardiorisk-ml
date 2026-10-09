@@ -7,3 +7,4 @@ data/raw/*
 .DS_Store
 *.egg-info/
 .env
+data/processed/*.parquet
