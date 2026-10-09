@@ -42,8 +42,7 @@ BMI_MAX = 70.0
 DRINKS_PER_WEEK_MAX = 100.0
 
 
-
-   def prepare_features(X: pd.DataFrame, derive_chronic_count: bool = True) -> pd.DataFrame:
+def prepare_features(X: pd.DataFrame, derive_chronic_count: bool = True) -> pd.DataFrame:
     """Cap implausible values and (optionally) add the derived feature
     `chronic_count` = number of reported chronic conditions (unanswered = 0)."""
     X = X.copy()
