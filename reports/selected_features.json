@@ -7,7 +7,6 @@
     "CHCCOPD3",
     "DIFFWALK",
     "HAVARTH4",
-    "chronic_count",
     "CHCKDNY2",
     "MARITAL",
     "SEXVAR",
@@ -39,13 +38,16 @@
     "CHCCOPD3",
     "DIFFWALK",
     "HAVARTH4",
-    "chronic_count",
     "CHCKDNY2",
     "MARITAL",
     "SEXVAR",
     "CHECKUP1",
     "_SMOKER3",
     "PHYSHLTH",
-    "CHCOCNC1"
+    "CHCOCNC1",
+    "INCOME3"
+  ],
+  "derived_tested_separately": [
+    "chronic_count"
   ]
 }
