@@ -1,0 +1,6 @@
+{
+  "model": "xgb",
+  "flag_threshold": 0.0925072431564331,
+  "moderate_threshold": 0.05134836211800575,
+  "rule": "highest threshold with out-of-fold recall >= 0.80 (training data only)"
+}
