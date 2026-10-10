@@ -1,0 +1,97 @@
+{
+  "logreg": {
+    "model": "logreg",
+    "rows": 361971,
+    "n_configs": 6,
+    "best_params": {
+      "C": 0.03
+    },
+    "tuned_pr_auc": 0.3357378657069394,
+    "tuned_pr_auc_std": 0.0032107408783871912,
+    "tuned_roc_auc": 0.8269495713870301,
+    "baseline_pr_auc": 0.3357181376381466,
+    "baseline_roc_auc": 0.826908743998333,
+    "seconds": 22.9
+  },
+  "dtree": {
+    "model": "dtree",
+    "rows": 361971,
+    "n_configs": 9,
+    "best_params": {
+      "max_depth": 12,
+      "min_samples_leaf": 200
+    },
+    "tuned_pr_auc": 0.3231532780993364,
+    "tuned_pr_auc_std": 0.0024567231583329384,
+    "tuned_roc_auc": 0.8221790984888951,
+    "baseline_pr_auc": 0.31954351733183206,
+    "baseline_roc_auc": 0.8204087576958754,
+    "seconds": 29.3
+  },
+  "knn": {
+    "model": "knn",
+    "rows": 30000,
+    "n_configs": 4,
+    "best_params": {
+      "n_neighbors": 200
+    },
+    "tuned_pr_auc": 0.31644179663281524,
+    "tuned_pr_auc_std": 0.013533973375055531,
+    "tuned_roc_auc": 0.8175593635502436,
+    "baseline_pr_auc": 0.27850861820699985,
+    "baseline_roc_auc": 0.7915293746658659,
+    "seconds": 22.0
+  },
+  "xgb": {
+    "model": "xgb",
+    "rows": 100000,
+    "n_configs": 15,
+    "best_params": {
+      "colsample_bytree": 0.6306163075223341,
+      "learning_rate": 0.027790201257148026,
+      "max_depth": 3,
+      "min_child_weight": 50,
+      "n_estimators": 600,
+      "reg_lambda": 24.472440973990114,
+      "subsample": 0.7085396127095583
+    },
+    "tuned_pr_auc": 0.3338630526974943,
+    "tuned_pr_auc_std": 0.004603594392580451,
+    "tuned_roc_auc": 0.8270948265752741,
+    "baseline_pr_auc": 0.3284788572090438,
+    "baseline_roc_auc": 0.8254381487732811,
+    "seconds": 259.0
+  },
+  "rf": {
+    "model": "rf",
+    "rows": 100000,
+    "n_configs": 12,
+    "best_params": {
+      "n_estimators": 200,
+      "min_samples_leaf": 20,
+      "max_features": "sqrt",
+      "max_depth": 16
+    },
+    "tuned_pr_auc": 0.3303540961350892,
+    "tuned_pr_auc_std": 0.003412568758630936,
+    "tuned_roc_auc": 0.8251199089812431,
+    "baseline_pr_auc": 0.3297829654955322,
+    "baseline_roc_auc": 0.8245951921810801,
+    "seconds": 284.2
+  },
+  "svm": {
+    "model": "svm",
+    "rows": 30000,
+    "n_configs": 9,
+    "best_params": {
+      "C": 1,
+      "gamma": 0.1
+    },
+    "tuned_pr_auc": 0.2514170405732556,
+    "tuned_pr_auc_std": 0.010262721969553051,
+    "tuned_roc_auc": 0.6535142128635965,
+    "baseline_pr_auc": 0.24988804324239444,
+    "baseline_roc_auc": 0.6512430107982377,
+    "seconds": 306.8
+  }
+}
