@@ -1,95 +1,107 @@
 """
-Phase 1-2: Load the raw BRFSS 2024 extract and produce a cleaned dataframe.
+Data acquisition and cleaning for CardioRisk (notebooks 01-02).
 
-Usage:
-    from src.data_loader import load_raw_brfss, clean_brfss
+    python src/data_loader.py        # run from the repo root
 
-    df_raw = load_raw_brfss("data/raw/LLCP2024.XPT")
-    df_clean = clean_brfss(df_raw, feature_cols=SHORTLIST_COLS)
-    df_clean.to_parquet("data/processed/cleaned.parquet")
+downloads the 2024 BRFSS file straight from the CDC (nothing is saved except the
+two parquet files below), keeps the 29 candidate questions plus the outcome, and
+applies the per-column recoding documented in notebooks/01_data_cleaning.ipynb:
+
+    data/raw/brfss2024_subset.parquet     raw codes, 30 columns
+    data/processed/cleaned.parquet        cleaned, ready for modelling
 """
 
 import io
+import os
 import zipfile
 
+import numpy as np
 import pandas as pd
 import requests
 
 BRFSS_2024_XPT_URL = "https://cdc.gov/brfss/annual_data/2024/files/LLCP2024XPT.zip"
-BRFSS_2024_CODEBOOK_URL = "https://cdc.gov/brfss/annual_data/2024/zip/codebook24_llcp-v2-508.zip"
-
-# TODO: finalize against the 2024 codebook — variable names can shift slightly year to year.
-TARGET_COL = "_MICHD"
+TARGET_COL = "_MICHD"          # 1 = ever told coronary heart disease / heart attack
 
 SHORTLIST_COLS = [
-    "_AGE_G", "SEXVAR", "_RACE", "EDUCA", "INCOME3",
-    "GENHLTH", "_BMI5", "DIABETE4", "_RFHYPE6", "TOLDHI3",
-    "_SMOKER3", "_TOTINDA", "SLEPTIM1", "_RFDRHV8",
-    # add more from your notebooks/00_variable_shortlist.md
+    # demographics
+    "_AGE_G", "SEXVAR", "_RACE", "EDUCA", "INCOME3", "MARITAL", "EMPLOY1",
+    # general health and function
+    "GENHLTH", "_BMI5", "PHYSHLTH", "MENTHLTH", "DIFFWALK", "DIFFDRES", "DECIDE",
+    # chronic conditions
+    "DIABETE4", "CHCKDNY2", "CHCCOPD3", "ASTHMA3", "ADDEPEV3", "CHCSCNC1", "CHCOCNC1", "HAVARTH4",
+    # lifestyle and access to care
+    "_SMOKER3", "_TOTINDA", "_RFDRHV9", "DRNKANY6", "_DRNKWK3", "MEDCOST1", "CHECKUP1",
 ]
 
-# BRFSS commonly uses these as "don't know / refused / missing" sentinel codes.
-# Confirm the exact set per-column against the codebook before applying blindly.
-SENTINEL_CODES = [7, 9, 77, 99, 777, 999, 7777, 9999]
+YES_NO = ["CHCKDNY2", "CHCCOPD3", "ASTHMA3", "ADDEPEV3", "CHCSCNC1", "CHCOCNC1",
+          "HAVARTH4", "DIFFWALK", "DIFFDRES", "DECIDE", "MEDCOST1", "DRNKANY6"]
 
-
-def load_raw_brfss(path: str) -> pd.DataFrame:
-    """Load the SAS transport (.XPT) BRFSS file from a local path. Convert once
-    and cache as parquet afterwards — re-parsing XPT on a 457K x 345 table is slow."""
-    return pd.read_sas(path, format="xport", encoding="latin-1")
+# codes meaning "don't know / refused" for each column (checked against the codebook)
+UNKNOWN_CODES = {
+    "_RACE": [9], "EDUCA": [9], "INCOME3": [77, 99], "GENHLTH": [7, 9],
+    "DIABETE4": [7, 9], "_SMOKER3": [9], "MARITAL": [9], "EMPLOY1": [9],
+    "CHECKUP1": [7, 9],
+}
 
 
 def download_and_load_brfss(url: str = BRFSS_2024_XPT_URL) -> pd.DataFrame:
-    """Download the BRFSS zip directly from the CDC, unzip in-memory, and parse
-    the .XPT — no manual download step needed. Run this once, then cache the
-    result with df.to_parquet() and load from disk on every subsequent run.
-
-    If the request times out or 403s, try prefixing the URL with 'www.'
-    (https://www.cdc.gov/... vs https://cdc.gov/...) — this varies by network.
-    """
-    response = requests.get(url, timeout=120)
+    """Fetch the zip from the CDC, unzip in memory and parse the .XPT file.
+    If the request fails, try https://www.cdc.gov/... (depends on the network)."""
+    response = requests.get(url, timeout=180)
     response.raise_for_status()
-
     with zipfile.ZipFile(io.BytesIO(response.content)) as z:
-        xpt_filename = z.namelist()[0]
-        with z.open(xpt_filename) as f:
+        with z.open(z.namelist()[0]) as f:
             return pd.read_sas(f, format="xport", encoding="latin-1")
 
 
-def download_codebook(url: str = BRFSS_2024_CODEBOOK_URL, out_path: str = "data/raw/codebook24.zip") -> None:
-    """Download the codebook zip for reference (open the PDF inside manually
-    while writing cleaning code — not meant to be parsed programmatically)."""
-    r = requests.get(url, timeout=60)
-    r.raise_for_status()
-    with open(out_path, "wb") as f:
-        f.write(r.content)
+def clean_brfss(df: pd.DataFrame) -> pd.DataFrame:
+    """Per-column recoding of the raw BRFSS codes (see notebook 01 for the reasoning)."""
+    df = df[SHORTLIST_COLS + [TARGET_COL]].copy()
+
+    # target: drop unknown outcome, then 1 = has CHD/MI, 0 = does not
+    df = df[df[TARGET_COL].notna()].copy()
+    df[TARGET_COL] = (df[TARGET_COL] == 1).astype(int)
+
+    # yes/no questions: 1 = yes, 2 = no; 7, 9 and blank become missing
+    for c in YES_NO:
+        df[c] = df[c].map({1.0: 1, 2.0: 0})
+
+    # calculated risk flags, recoded so 1 = risk
+    df["_TOTINDA"] = df["_TOTINDA"].map({1.0: 0, 2.0: 1})      # 1 = physically inactive
+    df["_RFDRHV9"] = df["_RFDRHV9"].map({1.0: 0, 2.0: 1})      # 1 = heavy drinker
+
+    # categorical columns: unknown / refused become missing
+    for c, codes in UNKNOWN_CODES.items():
+        df[c] = df[c].replace(codes, np.nan)
+
+    # days of poor health: 88 = none
+    for c in ["PHYSHLTH", "MENTHLTH"]:
+        df[c] = df[c].replace({88: 0, 77: np.nan, 99: np.nan})
+
+    # BMI is stored as BMI x 100
+    df["_BMI5"] = df["_BMI5"] / 100
+
+    # drinks per week: 99900 = unknown; tiny values are SAS floating-point zeros; stored x 100
+    dw = df["_DRNKWK3"].copy()
+    dw[dw == 99900] = np.nan
+    dw[dw < 1e-6] = 0
+    df["_DRNKWK3"] = dw / 100
+
+    return df.reset_index(drop=True)
 
 
-def clean_brfss(df: pd.DataFrame, feature_cols: list[str] = SHORTLIST_COLS,
-                 target_col: str = TARGET_COL) -> pd.DataFrame:
-    """Subset to the feature shortlist + target, drop missing target rows,
-    and null out sentinel 'unknown/refused' codes.
+def main():
+    raw = download_and_load_brfss()
+    print("downloaded:", raw.shape)
+    subset = raw[SHORTLIST_COLS + [TARGET_COL]].copy()
+    os.makedirs("data/raw", exist_ok=True)
+    os.makedirs("data/processed", exist_ok=True)
+    subset.to_parquet("data/raw/brfss2024_subset.parquet", index=False)
 
-    NOTE: sentinel codes vary by column semantics (e.g. 7/9 vs 77/99 vs 777/999) —
-    this generic pass is a starting point. Cross-check each column against the
-    codebook and override per-column as needed before trusting the output.
-    """
-    cols = feature_cols + [target_col]
-    out = df[cols].copy()
-
-    out = out[out[target_col].notna()]
-    out = out[~out[target_col].isin([7, 9])]  # unknown / refused on target
-
-    for col in feature_cols:
-        out.loc[out[col].isin(SENTINEL_CODES), col] = pd.NA
-
-    out[target_col] = (out[target_col] == 1).astype(int)  # 1=Yes -> 1, else 0
-    return out.reset_index(drop=True)
+    clean = clean_brfss(subset)
+    clean.to_parquet("data/processed/cleaned.parquet", index=False)
+    print("cleaned:", clean.shape, " positive rate:", round(clean[TARGET_COL].mean(), 4))
 
 
 if __name__ == "__main__":
-    raw = download_and_load_brfss()
-    raw.to_parquet("data/raw/full_2024.parquet", index=False)
-    clean = clean_brfss(raw)
-    clean.to_parquet("data/processed/cleaned.parquet", index=False)
-    print(f"Saved cleaned data: {clean.shape}")
+    main()

@@ -1,0 +1,24 @@
+{
+  "prevalence": 0.09357103193349743,
+  "thresholds": {
+    "moderate": 0.05134836211800575,
+    "high": 0.0925072431564331
+  },
+  "bands": {
+    "Low": {
+      "share_of_people": 0.5301142909238585,
+      "share_of_cases": 0.1,
+      "observed_rate": 0.01765110534379788
+    },
+    "Moderate": {
+      "share_of_people": 0.1318254777316415,
+      "share_of_cases": 0.1,
+      "observed_rate": 0.07098099209925184
+    },
+    "High": {
+      "share_of_people": 0.3380602313445,
+      "share_of_cases": 0.8,
+      "observed_rate": 0.22143043933054393
+    }
+  }
+}
