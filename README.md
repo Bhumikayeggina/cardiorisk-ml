@@ -2,7 +2,7 @@
 
 An end-to-end machine learning system that estimates cardiovascular disease risk from the **2024 CDC BRFSS** population health survey (457,670 respondents). It benchmarks 6 classifiers and 2 ensemble strategies under leakage-safe cross-validation, tunes and calibrates the final model, audits it across subgroups, stress-tests it with missing and noisy inputs, explains it with SHAP, and ships it as a live interactive risk-screening demo.
 
-**Live demo:** [_add your Streamlit link here after deployment_](https://cardioriskml.streamlit.app/)
+**Live demo:** [_Cardiorisk_ml_](https://cardioriskml.streamlit.app/)
 
 > Built as a Fundamentals of ML Lab mini-project by Bhumika Anushka Yeggina, Ginjupalli Tamoghna Sri Ram and Karimireddy Likith Reddy, MIT Manipal. It estimates the likelihood of *self-reported* coronary heart disease or heart attack. It is an academic framework, **not** a medical device and **not** a diagnosis.
 
